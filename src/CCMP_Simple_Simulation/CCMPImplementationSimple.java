@@ -1,5 +1,7 @@
 package CCMP_Simple_Simulation;
 
+import CCMP_Simple_Simulation.Exceptions.NotVerifiableException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -182,8 +184,24 @@ public class CCMPImplementationSimple {
             dec_data[i]=lista.get(i);
         return dec_data;
     }
+    public void Verification() throws NotVerifiableException {
+        String data_dec=new String(Decryption(),StandardCharsets.UTF_8);
+        StringPadding stringPadding=new StringPadding(data_dec);
+        //unsuccessful verification test case:
+        //StringPadding stringPadding = new StringPadding("hadefknsaefpo");
+        stringPadding.padd();
+        List<String> decryptedText;
+        decryptedText=stringPadding.listDivide();
+        byte [] oldMIc=getMIC();
+        byte [] newMic=MIC_calculation(packet.header,decryptedText);
+        if(!(Arrays.equals(oldMIc, newMic)))
+            throw new NotVerifiableException("Packet cannot be verified!");
+        else
+            System.out.println("Packet successfully verified!");
+    }
     public String printProcess()
     {
+
         StringBuilder sb = new StringBuilder();
         sb.append("Encrypting...").append("\n");
         byte [] enc=Encryption();
@@ -197,7 +215,12 @@ public class CCMPImplementationSimple {
             sb.append(String.format("%02X ", b));
         sb.append("\n");
         sb.append("Decrypting...").append("\n");
-        //byte []transformed=Decryption();
+        try {
+            Verification();
+        } catch (NotVerifiableException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
         String str2= new String(Decryption(),StandardCharsets.UTF_8);
         sb.append("Printing the decrypted plaintext from the data: ").append("\n");
         sb.append(str2).append("\n");
